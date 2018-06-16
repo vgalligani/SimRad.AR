@@ -5,4 +5,8 @@ El concepto central del simulador es la transformación de las variables meteoro
 * Modelar la propagación del haz del radar en la atmósfera teniendo en cuenta los efectos de la refracción atmosférica.
 * Modelar la ganancia de la antena y el ancho del haz de los radares meteorológicos modelados.
 * Transformar las variables atmosféricas de WRF (e.g., Qr - rain mixing ratio en kg/kg) en las variables polarimétricas observables de radares meteorológicos (e.g., Zh - reflectividad horizontal en dBz). En este último punto es clave incorporar de manera consistente con WRF las parametrizaciones de la microfísica correspondiente y un cálculo adecuado de las propiedades ópticas de las especies de la misma. El modelo actualmente puede utilizar las salidas del WRF con las parametrizaciones microfisicas WRF-WSM6 (Hong and Lim, 2006) y WRF-Morrison (Morrison et al., 2009). 
+Para correr adecuandamente este simulador, las siguientes herramientas son necesarias: 
+* PyTMatrix (https://github.com/jleinonen/pytmatrix) 
+* Py-ARTS (http://arm-doe.github.io/pyart/)
+* wrf-python (https://wrf-python.readthedocs.io/en/latest/) 
 
