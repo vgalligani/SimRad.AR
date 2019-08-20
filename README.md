@@ -51,12 +51,3 @@ max_range               = rango del radar, sugeridos 120 km o 240 km
 mode                    = 0 (central haz) , 1 (gaussiana del ancho del haz)
 ncfile                  = wrf output file
 ftable                  = lookuptable file (generada con generate_lookups_WSM6, generate_lookups_MORR, etc)
-
-
-
-
-
-
-
-
-
