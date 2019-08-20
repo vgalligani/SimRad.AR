@@ -10,3 +10,23 @@ Para correr adecuandamente este simulador, las siguientes herramientas son neces
 * Py-ARTS (http://arm-doe.github.io/pyart/)
 * wrf-python (https://wrf-python.readthedocs.io/en/latest/) 
 
+
+Los radares en la base de datos son: 
+
+| Input number  | Radar  (location) |
+| ------------- | ----------------- | 
+|  0 |     (Anguil)  |
+|  1 | AR7 (Parana)    |
+|  2 | RMA5 (Bernardo de Irigoyen)  |
+|  3 | RMA1 (CORDOBA)   |
+|  4 | RMA10 (ESPORA)  |
+|  5 | RMA2 (EZEIZA)  |
+|  6 | RMA3 (LAS LOMITAS)  |
+|  7 | RMA6 (MAR DEL PLATA)  |
+|  8 | RMA8 (MERCEDES)  |
+|  9 | RMA7 (NEUQUEN)  |
+|  10 | AR5 (PERGAMINO)   |
+|  11 | RMA4 (RESISTENCIA)  |
+|  12 | RMA9 (RIO GRANDE)  |
+|  13 | RMA11 (TERMAS RIO HONDO)  |
+|  14 | RMA0 (BARILOCHE)  |
