@@ -143,7 +143,34 @@ def readWRFvariables(strfile, mp):
         qi = mixr2massconc( qi , pressure, temp )        
         qc = mixr2massconc( qc , pressure, temp )       
         qg = mixr2massconc( qg , pressure, temp )    
+
+
+    elif (mp == 8):
+        print('THOM: mp=8')
         
+        #qnc = mixr2massconc( getvar(ncfile, "QNCLOUD") , pressure, temp ) 
+        qnr =  np.squeeze(ncfile.variables["QNRAIN" ][0,:,:,:] )              
+        qr =  np.squeeze(ncfile.variables["QRAIN"][0,:,:,:]  )      
+        qs =  np.squeeze(ncfile.variables["QSNOW"][0,:,:,:]  )    
+        qi =  np.squeeze(ncfile.variables["QICE"][0,:,:,:]   ) 
+        qc =  np.squeeze(ncfile.variables["QCLOUD"][0,:,:,:] )   
+        qg =  np.squeeze(ncfile.variables["QGRAUP"][0,:,:,:] )   
+
+        qi[np.where(qi<1E-8)] = 0.
+        qr[np.where(qr<1E-8)] = 0.
+        qnr[np.where(qr<1E-8)] = 0.            #0.8E-9    
+        qs[np.where(qs<1E-8)] = 0.
+        qg[np.where(qg<1E-8)] = 0.
+        
+        #qnc = mixr2massconc( getvar(ncfile, "QNCLOUD") , pressure, temp ) 
+        qnr = mixr2massconc( qnr , pressure, temp )       
+        
+        qr = mixr2massconc( qr , pressure, temp )        
+        qs = mixr2massconc( qs , pressure, temp )        
+        qi = mixr2massconc( qi , pressure, temp )        
+        qc = mixr2massconc( qc , pressure, temp )       
+        qg = mixr2massconc( qg , pressure, temp )    
+
     else: 
         print('Selected microphysics parameterization not included')
         sys.exit()
@@ -152,17 +179,12 @@ def readWRFvariables(strfile, mp):
         return z_level, lat, lon, u, v, w, qr_clipped, qs_clipped, qc_clipped, qg_clipped, qi_clipped, qtotal_int
     elif (mp == 10): 
         return z_level, lat, lon, u, v, w, qr, qs, qc, qg, qi, qnr, qns, qng, qni
+    elif (mp == 8): 
+        return z_level, lat, lon, u, v, w, qr, qs, qc, qg, qi, qnr
+    
 #==============================================================================
             
         
-
-
-
-
-
-
-
-
 
 
 
