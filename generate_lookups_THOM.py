@@ -85,21 +85,21 @@ def drop_ar(D_eq):
 # Function to calculate psd values from wrf output
 # SNOW
 def get_psd_param_snow(q):
-    rho_s    = 100.;
-    a        = (np.pi*rhos)/6;
-    b        = 3;
+    #rho_s    = 100.;
+    #a        = (np.pi*rhos)/6;
+    #b        = 3;
     [M2, M3] = predict_mom07( q/0.069, 260, 3, np.nan );
     oM3      = 1/M3;
     Mrat     = M2*(M2*oM3)*(M2*oM3)*(M2*oM3);
-    M0       = (M2*oM3)^0.6357;
+    M0       = (M2*oM3)**0.6357;
     Kap0     = 490.6;
     Kap1     = 17.46;
 
     mu_s     = 0.6357;  
     N1 = Mrat*Kap0
     N2 = Kap1*M0
-    slam1    = M2 * oM3 * 20.78;
-    slam2    = M2 * oM3 * 3.29;    
+    Lambda1    = M2 * oM3 * 20.78;
+    Lambda2    = M2 * oM3 * 3.29;    
     
     return [N1/1000., N2/1000., Lambda1/1000., Lambda2/1000., mu_s]
 
@@ -115,29 +115,24 @@ def get_psd_param_rain(q, qn):
     return [N0/1000., Lambda/1000.]
 
 # GRAU
-def get_psd_param_grau(q, c_cloud, q_rain):
+def get_psd_param_grau(q):
     rho_g = 400.;
-    xslw1   = 5 + np.log10( max( 1E-5, min(1E-2, q_cloud+q_rain )));
+    am_g = np.pi*rho_g/6.0;
+    gonv_min = 1E4;
+    gonv_max = 3E6;
+    xslw1   = 5 + np.log10(1E-2);
     ygra1   = 4.302 + np.log10( max( 5E-5, min(5E-2, q )));
     zans1   = 3.565 + (90/(50*xslw1*ygra1/(5/xslw1+1+0.25*ygra1)+30+15*ygra1));
     N0_exp  = 10**(zans1);
     N0_exp  = max(gonv_min, min(N0_exp, gonv_max));
-    N0_min  = min(N0_exp, N0_min);
+    N0_min  = min(N0_exp, gonv_max);
     N0_exp  = N0_min;
-    lam_exp = (N0_exp*am_g/q)^(1/4);
+    lam_exp = (N0_exp*am_g/q)**(1/4);
     lamg    = lam_exp;
-    ilamg   = 1/lamg;
     N0      = (N0_exp/lam_exp) * lamg;
     Lambda  = lam_exp
     
     return [N0/1000., Lambda/1000.]
-
-   
-
-
-
-
-(self, N1=1.0, N2=1.0, Lambda1=1.0, Lambda2=1.0, mu=0.0, D_max=None):
 
 
 #------------------------------------------------------------------------------------------
@@ -145,17 +140,14 @@ def get_psd_param_grau(q, c_cloud, q_rain):
 # set Exponential particle size distribution (PSD) 
 # the PSD form is N(D) = N0 exp(-Lambda*D)
 # and return radar variables: 
-def get_radar_variables_unnormalizedGamma(N0=None,Lambda=None,mu=None,D_max=None):
-    scatterer.psd = psd.UnnormalizedGammaPSD(N0=N0, Lambda=Lambda, mu=mu, D_max=D_max)
+def get_radar_variables_ThomPSD(N1=None, N2=None, Lambda1=None, Lambda2=None, mu=None, D_max=None):
+    scatterer.psd = ThomPSD(N1=N1, N2=N2, Lambda1=Lambda1, Lambda2=Lambda2, mu=mu, D_max=D_max)
     return [radar.refl(scatterer), radar.Zdr(scatterer), radar.ldr(scatterer)] 
             
-def get_radar_variables_unnormalizedGamma_fwScattering(N0=None,Lambda=None,mu=None,D_max=None):
-    scatterer.psd = psd.UnnormalizedGammaPSD(N0=N0, Lambda=Lambda, mu=mu, D_max=D_max)
+def get_radar_variables_ThomPSD_fwScattering(N1=None, N2=None, Lambda1=None, Lambda2=None, mu=None, D_max=None):
+    scatterer.psd = ThomPSD(N1=N1, N2=N2, Lambda1=Lambda1, Lambda2=Lambda2, mu=mu, D_max=D_max)
     return [radar.Ai(scatterer, h_pol=True), radar.Ai(scatterer, h_pol=False), radar.Kdp(scatterer)] 
                              
-    #return [10.*np.log10(radar.refl(scatterer)), 10.*np.log10(radar.Zdr(scatterer)), 
-    # radar.Kdp(scatterer), radar.Ai(scatterer)]
-
 # set Exponential particle size distribution (PSD) - for snow, graupel
 # the PSD form is N(D) = N0 exp(-Lambda*D)
 # and return radar variables: 
@@ -262,26 +254,28 @@ ref_indices_rain = [complex(8.983, 0.989), complex(8.590, 1.670), complex(7.718,
 dim = const['dim']
 
 #initialize Lambda, N0
-N0_rain     = np.zeros([dim,dim])
-Lambda_rain = np.zeros([dim,dim])
-N0_snow     = np.zeros([dim,dim])
-Lambda_snow = np.zeros([dim,dim])
-N0_grau     = np.zeros([dim,dim])
-Lambda_grau = np.zeros([dim,dim])
-N0_clou     = np.zeros([dim])
-Lambda_clou = np.zeros([dim])
-mu_clou     = np.zeros([dim])
-N0_ice      = np.zeros([dim,dim])
-Lambda_ice  = np.zeros([dim,dim])
+N0_rain      = np.zeros([dim,dim])
+Lambda_rain  = np.zeros([dim,dim])
+N1_snow      = np.zeros([dim])
+Lambda1_snow = np.zeros([dim])
+N2_snow      = np.zeros([dim])
+Lambda2_snow = np.zeros([dim])
+mu_snow = np.zeros([dim])
+
+N0_grau      = np.zeros([dim])
+Lambda_grau  = np.zeros([dim])
+
+N0_clou      = np.zeros([dim])
+Lambda_clou  = np.zeros([dim])
+mu_clou      = np.zeros([dim])
+#N0_ice       = np.zeros([dim,dim])
 
 for i in range(dim):
     for j in range(dim):
         [N0_rain[i,j], Lambda_rain[i,j]] = get_psd_param_rain(q_rain_vec[i],qn_rain_vec[j]);
-        [N0_snow[i,j], Lambda_snow[i,j]] = get_psd_param_snow(q_snow_vec[i],qn_snow_vec[j]);
-        [N0_grau[i,j], Lambda_grau[i,j]] = get_psd_param_grau(q_grau_vec[i],qn_grau_vec[j]); 
-        [N0_ice[i,j],  Lambda_ice[i,j]]  = get_psd_param_ice(q_ice_vec[i],qn_ice_vec[j]); 
-    [N0_clou[i], Lambda_clou[i], mu_clou[i]] = get_psd_param_cloud(q_clou_vec[i]);
-
+    [N0_grau[i], Lambda_grau[i]] = get_psd_param_grau(q_grau_vec[i]); 
+    [N1_snow[i], N2_snow[i], Lambda1_snow[i], Lambda2_snow[i], mu_snow[i]] = get_psd_param_snow(q_snow_vec[i]);
+    #[N0_clou[i], Lambda_clou[i], mu_clou[i]] = get_psd_param_cloud(q_clou_vec[i]);
 
 #-------------------------------------------------------------  
 # (2) SCATTERER OBJECT FOR RAIN AND CREATE LOOKUP TABLE 
@@ -318,12 +312,12 @@ for ifreq in range(3):
      
     for i in range(dim):
         for j in range(dim):
-            [Zh_RAIN[ifreq,i,j], Zdr_RAIN[ifreq,i,j], LDR_RAIN[ifreq,i,j]] = get_radar_variables_unnormalizedGamma(N0_rain[i,j],Lambda_rain[i,j],mu=0.,D_max=10.);
+            [Zh_RAIN[ifreq,i,j], Zdr_RAIN[ifreq,i,j], LDR_RAIN[ifreq,i,j]] = get_radar_variables_Exponential(N0_rain[i,j],Lambda_rain[i,j],D_max=10.);
 
     scatterer.set_geometry(geom_forw)   #geom_horiz_forw = (90.0, 90.0, 0.0, 0.0, 0.0, 0.0) #horiz. forward scatter 
     for i in range(dim):
         for j in range(dim):
-            [Aih_RAIN[ifreq,i,j], Aiv_RAIN[ifreq,i,j], KDP_RAIN[ifreq,i,j]] = get_radar_variables_unnormalizedGamma_fwScattering(N0_rain[i,j],Lambda_rain[i,j],mu=0.,D_max=10.);
+            [Aih_RAIN[ifreq,i,j], Aiv_RAIN[ifreq,i,j], KDP_RAIN[ifreq,i,j]] = get_radar_variables_Exponential_fwScattering(N0_rain[i,j],Lambda_rain[i,j],D_max=10.);
         
     del scatterer 
 
@@ -362,12 +356,12 @@ else:
 
 ref_indices_snow = [ref_indices_snow1,ref_indices_snow2,ref_indices_snow3]
 
-Zh_SNOW  = np.zeros([3,dim,dim])
-Zdr_SNOW = np.zeros([3,dim,dim])
-Aih_SNOW = np.zeros([3,dim,dim])
-Aiv_SNOW = np.zeros([3,dim,dim])
-KDP_SNOW = np.zeros([3,dim,dim])
-LDR_SNOW = np.zeros([3,dim,dim])
+Zh_SNOW  = np.zeros([3,dim])
+Zdr_SNOW = np.zeros([3,dim])
+Aih_SNOW = np.zeros([3,dim])
+Aiv_SNOW = np.zeros([3,dim])
+KDP_SNOW = np.zeros([3,dim])
+LDR_SNOW = np.zeros([3,dim])
 
 
 for ifreq in range(3):
@@ -378,13 +372,11 @@ for ifreq in range(3):
     scatterer.psd_integrator.geometries  = (geom_forw, geom_back)
     scatterer.psd_integrator.init_scatter_table(scatterer)   
     for i in range(dim):
-        for j in range(dim):
-            [Zh_SNOW[ifreq,i,j], Zdr_SNOW[ifreq,i,j], LDR_SNOW[ifreq,i,j]] = get_radar_variables_unnormalizedGamma(N0_snow[i,j],Lambda_snow[i,j],mu=0.,D_max=50.);
+        [Zh_SNOW[ifreq,i], Zdr_SNOW[ifreq,i], LDR_SNOW[ifreq,i]] = get_radar_variables_ThomPSD(N1_snow[i], N2_snow[i], Lambda1_snow[i], Lambda2_snow[i], mu_snow[i], D_max=50.); 
 
     scatterer.set_geometry(geom_forw)   #geom_horiz_forw = (90.0, 90.0, 0.0, 0.0, 0.0, 0.0) #horiz. forward scatter 
     for i in range(dim):
-        for j in range(dim):
-            [Aih_SNOW[ifreq,i,j], Aiv_SNOW[ifreq,i,j], KDP_SNOW[ifreq,i,j]] = get_radar_variables_unnormalizedGamma_fwScattering(N0_snow[i,j],Lambda_snow[i,j],mu=0.,D_max=50.);
+        [Aih_SNOW[ifreq,i], Aiv_SNOW[ifreq,i], KDP_SNOW[ifreq,i]] = get_radar_variables_ThomPSD_fwScattering(N1_snow[i], N2_snow[i], Lambda1_snow[i], Lambda2_snow[i], mu_snow[i], D_max=50.);
         
     del scatterer
 
@@ -415,12 +407,12 @@ else:
 
 ref_indices_grau = [ref_indices_grau1, ref_indices_grau2, ref_indices_grau3]
 
-Zh_GRAU  = np.zeros([3,dim,dim])
-Zdr_GRAU = np.zeros([3,dim,dim])
-Aih_GRAU = np.zeros([3,dim,dim])
-Aiv_GRAU = np.zeros([3,dim,dim])
-KDP_GRAU = np.zeros([3,dim,dim])
-LDR_GRAU = np.zeros([3,dim,dim])
+Zh_GRAU  = np.zeros([3,dim])
+Zdr_GRAU = np.zeros([3,dim])
+Aih_GRAU = np.zeros([3,dim])
+Aiv_GRAU = np.zeros([3,dim])
+KDP_GRAU = np.zeros([3,dim])
+LDR_GRAU = np.zeros([3,dim])
 
 
 
@@ -433,13 +425,11 @@ for ifreq in range(3):
     scatterer.psd_integrator.geometries  = (geom_forw, geom_back)
     scatterer.psd_integrator.init_scatter_table(scatterer)   
     for i in range(dim):
-        for j in range(dim):
-            [Zh_GRAU[ifreq,i,j], Zdr_GRAU[ifreq,i,j], LDR_GRAU[ifreq,i,j]] = get_radar_variables_unnormalizedGamma(N0_grau[i,j],Lambda_grau[i,j],mu=0.,D_max=50.);
+        [Zh_GRAU[ifreq,i], Zdr_GRAU[ifreq,i], LDR_GRAU[ifreq,i]] = get_radar_variables_Exponential(N0_grau[i],Lambda_grau[i],D_max=50.);
 
     scatterer.set_geometry(geom_forw)   #geom_horiz_forw = (90.0, 90.0, 0.0, 0.0, 0.0, 0.0) #horiz. forward scatter 
     for i in range(dim):
-        for j in range(dim):
-            [Aih_GRAU[ifreq,i,j], Aiv_GRAU[ifreq,i,j], KDP_GRAU[ifreq,i,j]] = get_radar_variables_unnormalizedGamma_fwScattering(N0_grau[i,j],Lambda_grau[i,j],mu=0.,D_max=50.);
+        [Aih_GRAU[ifreq,i], Aiv_GRAU[ifreq,i], KDP_GRAU[ifreq,i]] = get_radar_variables_Exponential_fwScattering(N0_grau[i],Lambda_grau[i],D_max=50.);
             
     del scatterer
 
@@ -545,9 +535,9 @@ if airmatrix == 1:
 
     # SAVE LOOKUP TABLE TO THIS FILE 
     if getpass.getuser() == 'vgalligani':
-        f = open('/home/victoria.galligani/Work/Studies/WRF_radar_simulator/UNIX_MORR_LOOKUPTABLE_airmatrix_graupelAR1_ALLBANDS.pckl', 'wb')
+        f = open('/home/victoria.galligani/Work/Studies/WRF_radar_simulator/UNIX_THOM_LOOKUPTABLE_airmatrix_graupelAR1_ALLBANDS.pckl', 'wb')
     elif getpass.getuser() == 'victoria.galligani':
-        f = open('/Users/victoria.galligani/Work/Studies/WRF_radar_simulator/MAC_MORR_LOOKUPTABLE_airmatrix_graupelAR1_ALLBANDS.pckl', 'wb')
+        f = open('/Users/victoria.galligani/Work/Studies/WRF_radar_simulator/MAC_THOM_LOOKUPTABLE_airmatrix_graupelAR1_ALLBANDS.pckl', 'wb')
         
     pickle.dump([Zh_RAIN, Zdr_RAIN, Zh_SNOW, Zdr_SNOW, Zh_GRAU, Zdr_GRAU,               
                  LDR_RAIN, Aih_RAIN, Aiv_RAIN, KDP_RAIN, LDR_SNOW, Aih_SNOW, Aiv_SNOW, KDP_SNOW, 
