@@ -105,7 +105,8 @@ class CHECKExponentialPSD(PSD):
                 (self.D_max == other.D_max)
         except AttributeError:
             return False
-        
+
+
 class ThomPSD(PSD):
     """Hybrid PSD for WRF THOM snow (PSD).
 
@@ -149,12 +150,8 @@ class ThomPSD(PSD):
     def __eq__(self, other):
         try:
             return isinstance(other, ThomPSD) and \
-                (self.N1 == other.N1) and (self.Lambda1 == other.Lambda1) and \
-                (self.D_max == other.D_max) and (self.N2 == other.N2) and \ 
-                (self.Lambda2 == other.Lambda2) and (self.mu == other.mu)
+                (self.N1 == other.N1) and (self.N2 == other.N2) and \
+                (self.Lambda1 == other.Lambda1) and (self.Lambda2 == other.Lambda2) and \
+                (self.mu == other.mu) and (self.D_max == other.D_max)
         except AttributeError:
             return False
-
-        
-
-
